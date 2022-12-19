@@ -1,13 +1,3 @@
-# Sample Hardhat Project
+# The detailed instuctions how to create and run this project [here](https://gist.github.com/yupeshekhonov/c7b5ab6b15314087c04e181cbd60639a)
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
