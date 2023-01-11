@@ -23,7 +23,7 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@unique-nft/solidity-interfaces": "^0.0.1",
+    "@unique-nft/solidity-interfaces": "^0.40.0",
     "ts-node": "^10.9.1"
   }
 }

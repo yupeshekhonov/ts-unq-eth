@@ -1,7 +1,8 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.17;
 
 import {CollectionHelpers, CollectionHelpersEvents} from  "@unique-nft/solidity-interfaces/contracts/CollectionHelpers.sol";
-import {UniqueNFT} from "@unique-nft/solidity-interfaces/contracts/UniqueNFT.sol";
+import {UniqueNFT, CrossAddress} from "@unique-nft/solidity-interfaces/contracts/UniqueNFT.sol";
 
 contract CollectionManager is CollectionHelpersEvents {
     CollectionHelpers helpers = CollectionHelpers(0x6C4E9fE1AE37a41E93CEE429e8E1881aBdcbb54F);
@@ -20,8 +21,8 @@ contract CollectionManager is CollectionHelpersEvents {
 
         UniqueNFT collection = UniqueNFT(collectionAddress);
 
-        collection.addCollectionAdmin(managerContract);
-        collection.changeCollectionOwner(owner);
+        collection.addCollectionAdminCross(CrossAddress(managerContract, 0));
+        collection.changeCollectionOwnerCross(CrossAddress(owner, 0));
 
         return collectionAddress;
     }

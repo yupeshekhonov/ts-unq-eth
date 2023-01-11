@@ -25,17 +25,20 @@ async function main() {
   const privateKey = process.env.PRIVATE_KEY
   // @ts-ignore
   const wallet = new ethers.Wallet(privateKey, provider)
-  const contractAddress = '0x98e32FEe07E4CA419896f0CdEAB256df7A60B490'
+  const contractAddress = '0xFcD9dC04af91B033834B230A1D8B4CDd7fDfFbb4'
 
   // @ts-ignore
   const collectionHelpers = await CollectionHelpersFactory(wallet, ethers)
 
   // Create a contract instance
-  const collectionManager = CollectionManager__factory.connect('0x98e32FEe07E4CA419896f0CdEAB256df7A60B490', wallet);
+  const collectionManager = CollectionManager__factory.connect(contractAddress, wallet);
   // const contract = await ethers.getContractFactory('CollectionManager')
   // const deployer = await contract.deploy()
   // const collectionManager = await deployer.deployed()
   console.log(`Contract address found: ${collectionManager.address}`)
+/*  const [owner] = await ethers.getSigners()
+  console.log(owner.address)
+  return*/
 
   // create a new collection
   let newCollection = await collectionManager.createCollection(
@@ -59,15 +62,17 @@ async function main() {
   // mint NFTs
   const collection = await UniqueNFTFactory(collectionAddress, wallet, ethers)
 
-  const txMintToken = await (await collection.mintWithTokenURI(wallet.address, tokenIpfsCids["1"])).wait()
-    console.log(txMintToken)
+   const txMintToken = await (await collection.mintWithTokenURI(wallet.address, tokenIpfsCids['1'])).wait()
+   const tokenId = txMintToken.events?.[1].args?.tokenId.toNumber()
+   const tokenUri = await collection.tokenURI(tokenId)
+   console.log(`Successfully minted token #${tokenId}, it's URI is: ${tokenUri}`)
 
-  /*for (let cid in tokenIpfsCids) {
+  /* for (let cid in tokenIpfsCids) {
     const txMintToken = await (await collection.mintWithTokenURI(wallet.address, cid)).wait()
     const tokenId = txMintToken.events?.[0].args?.tokenId.toNumber()
     const tokenUri = await collection.tokenURI(tokenId)
     console.log(`Successfully minted token #${tokenId}, it's URI is: ${tokenUri}`)
-  }*/
+  } */
 }
 
 main().catch((error) => {
