@@ -3,6 +3,9 @@ import {ethers} from "hardhat"
 import {CollectionHelpersFactory, UniqueNFTFactory} from "@unique-nft/solidity-interfaces"
 import {CollectionManager__factory} from '../typechain-types'
 import {Address} from "@unique-nft/utils";
+import {Sdk} from "@unique-nft/sdk"
+import {KeyringProvider} from '@unique-nft/accounts/keyring'
+import { uniqueNftSol } from '../typechain-types/@unique-nft/solidity-interfaces/contracts';
 
 dotenv.config()
 
@@ -59,13 +62,33 @@ async function main() {
   console.log(`Collection created!`)
   console.log(`Address: ${collectionAddress} , id: ${collectionId}`)
 
+
+  const sdk = new Sdk({baseUrl:'https://rest.unique.network/opal/v1'})
+
+  const gasPriceResult = await sdk.stateQuery.execute({endpoint: 'rpc', module:'eth', method: 'gasPrice'});
+  
+  const txMake = await (await collectionHelpers.makeCollectionERC721MetadataCompatible(
+    collectionAddress, 
+    'https://ipfs.unique.network/ipfs/', 
+      {
+        gasLimit: 10_000_000,
+        gasPrice: gasPriceResult.json,
+      }
+    )).wait()
+
+  console.log(txMake)
+  return
+
   // mint NFTs
   const collection = await UniqueNFTFactory(collectionAddress, wallet, ethers)
-
-   const txMintToken = await (await collection.mintWithTokenURI(wallet.address, tokenIpfsCids['1'])).wait()
+   const txMintToken = await (await collection.mintWithTokenURI(wallet.address, 'https://ipfs.unique.network/ipfs/' + tokenIpfsCids['1'])).wait()
    const tokenId = txMintToken.events?.[1].args?.tokenId.toNumber()
    const tokenUri = await collection.tokenURI(tokenId)
    console.log(`Successfully minted token #${tokenId}, it's URI is: ${tokenUri}`)
+  
+  const tx = await (await collection.transfer('0x1B7AAcb25894D792601BBE4Ed34E07Ed14Fd31eB', tokenId)).wait()
+
+  console.log(`Token transferred!`)
 
   /* for (let cid in tokenIpfsCids) {
     const txMintToken = await (await collection.mintWithTokenURI(wallet.address, cid)).wait()
