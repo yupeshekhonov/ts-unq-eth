@@ -1,11 +1,12 @@
 import dotenv from 'dotenv'
 import {ethers} from "hardhat"
-import {CollectionHelpersFactory, UniqueNFTFactory} from "@unique-nft/solidity-interfaces"
+import {CollectionHelpersFactory, UniqueNFTFactory, ContractHelpers, ContractHelpersFactory} from "@unique-nft/solidity-interfaces"
 import {CollectionManager__factory} from '../typechain-types'
 import {Address} from "@unique-nft/utils";
 import {Sdk} from "@unique-nft/sdk"
 import {KeyringProvider} from '@unique-nft/accounts/keyring'
 import { uniqueNftSol } from '../typechain-types/@unique-nft/solidity-interfaces/contracts';
+import { Ethereum } from '@unique-nft/utils/extension';
 
 dotenv.config()
 
@@ -26,11 +27,12 @@ async function main() {
 
   // Create a signer
   const privateKey = process.env.PRIVATE_KEY
-  // @ts-ignore
+  if (!privateKey) 
+    throw new Error('Missing private key')
   const wallet = new ethers.Wallet(privateKey, provider)
+
   const contractAddress = '0xFcD9dC04af91B033834B230A1D8B4CDd7fDfFbb4'
 
-  // @ts-ignore
   const collectionHelpers = await CollectionHelpersFactory(wallet, ethers)
 
   // Create a contract instance
@@ -43,17 +45,34 @@ async function main() {
   console.log(owner.address)
   return*/
 
+  const contractHelpers = await ContractHelpersFactory(wallet, ethers)
+
+  const setSponsorTx = await (await contractHelpers.setSponsor(
+    collectionManager.address, 
+    '0x68181286fA2Ef5Bb22CDA988016209C0306a8028'
+  )).wait()
+
+  const confirmSponsorTx = await contractHelpers.confirmSponsorship(
+    collectionManager.address,
+    {
+      gasLimit: 10_000_000,
+    }
+  )
+
+  console.log(`New sponsor was set for the contract. 
+  The sponsor address: ${Ethereum.parseEthersTxReceipt(setSponsorTx).events.ContractSponsorSet.sponsor}`)
+
   // create a new collection
   let newCollection = await collectionManager.createCollection(
-      '0xb4d6A98aa8CD5396069c2818Adf4ae1A0384b43a',
-      '0xb4d6A98aa8CD5396069c2818Adf4ae1A0384b43a',
-      'My new collection',
-      'This collection is for testing purposes',
-      'CL',
-      'https://ipfs.unique.network/ipfs/',
-      {
-        value: await collectionHelpers.collectionCreationFee()
-      }
+    '0xb4d6A98aa8CD5396069c2818Adf4ae1A0384b43a',
+    '0xb4d6A98aa8CD5396069c2818Adf4ae1A0384b43a',
+    'My new collection',
+    'This collection is for testing purposes',
+    'CL',
+    'https://ipfs.unique.network/ipfs/',
+    {
+      value: await collectionHelpers.collectionCreationFee()
+    }
   )
 
   const transactionReceipt = await newCollection.wait()
@@ -62,33 +81,18 @@ async function main() {
   console.log(`Collection created!`)
   console.log(`Address: ${collectionAddress} , id: ${collectionId}`)
 
-
-  const sdk = new Sdk({baseUrl:'https://rest.unique.network/opal/v1'})
-
-  const gasPriceResult = await sdk.stateQuery.execute({endpoint: 'rpc', module:'eth', method: 'gasPrice'});
-  
-  const txMake = await (await collectionHelpers.makeCollectionERC721MetadataCompatible(
-    collectionAddress, 
-    'https://ipfs.unique.network/ipfs/', 
-      {
-        gasLimit: 10_000_000,
-        gasPrice: gasPriceResult.json,
-      }
-    )).wait()
-
-  console.log(txMake)
-  return
+  return 
 
   // mint NFTs
   const collection = await UniqueNFTFactory(collectionAddress, wallet, ethers)
-   const txMintToken = await (await collection.mintWithTokenURI(wallet.address, 'https://ipfs.unique.network/ipfs/' + tokenIpfsCids['1'])).wait()
-   const tokenId = txMintToken.events?.[1].args?.tokenId.toNumber()
-   const tokenUri = await collection.tokenURI(tokenId)
-   console.log(`Successfully minted token #${tokenId}, it's URI is: ${tokenUri}`)
-  
-  const tx = await (await collection.transfer('0x1B7AAcb25894D792601BBE4Ed34E07Ed14Fd31eB', tokenId)).wait()
 
-  console.log(`Token transferred!`)
+  const txMintToken = await (await collection.mintWithTokenURI(wallet.address, 'https://ipfs.unique.network/ipfs/' + tokenIpfsCids['1'])).wait()
+  const tokenId = txMintToken.events?.[1].args?.tokenId.toNumber()
+  const tokenUri = await collection.tokenURI(tokenId)
+  console.log(`Successfully minted token #${tokenId}, it's URI is: ${tokenUri}`)
+  
+  // const tx = await (await collection.transfer('0x1B7AAcb25894D792601BBE4Ed34E07Ed14Fd31eB', tokenId)).wait()
+  // console.log(`Token transferred!`)
 
   /* for (let cid in tokenIpfsCids) {
     const txMintToken = await (await collection.mintWithTokenURI(wallet.address, cid)).wait()

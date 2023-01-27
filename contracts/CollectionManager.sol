@@ -16,7 +16,7 @@ contract CollectionManager is CollectionHelpersEvents {
         string calldata baseURI
     ) public payable virtual returns (address){
         address collectionAddress = helpers.createNFTCollection{value: helpers.collectionCreationFee()}(name, description, symbol);
-
+        
         helpers.makeCollectionERC721MetadataCompatible(collectionAddress, baseURI);
 
         UniqueNFT collection = UniqueNFT(collectionAddress);
